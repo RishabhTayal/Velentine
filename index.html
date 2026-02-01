@@ -121,12 +121,20 @@
       position:absolute;
       left:50%;
       top:26px;
-      transform: translateX(-50%);
-      width:10px; height:10px;
+      transform: translateX(-50%) rotate(45deg);
+      width:8px; height:8px;
       background:#ff6aa6;
-      border-radius: 0 0 10px 10px;
-      clip-path: polygon(50% 100%, 0 0, 100% 0);
+      border-radius: 2px;
     }
+    .avatar .nose::before, .avatar .nose::after{
+      content:"";
+      position:absolute;
+      width:8px; height:8px;
+      background:#ff6aa6;
+      border-radius:50%;
+    }
+    .avatar .nose::before{ left:-4px; top:0; }
+    .avatar .nose::after{ left:0; top:-4px; }
     .avatar .blush{
       position:absolute;
       width:14px; height:8px;
