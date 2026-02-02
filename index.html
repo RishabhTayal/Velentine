@@ -414,10 +414,42 @@
     const arena = document.getElementById("arena");
     const noBtn = document.getElementById("noBtn");
 
+    // Array of funny phrases for the "No" button
+    const funnyPhrases = [
+      "No",
+      "Are you sure?",
+      "Think again!",
+      "Really?",
+      "Don't be silly!",
+      "Try again!",
+      "Nope!",
+      "Pick the other one!",
+      "I'm waiting...",
+      "Wrong choice!",
+      "Not this one!",
+      "Nooo",
+      "Pick Yes!",
+      "Keep trying!",
+      "Maybe reconsider?",
+      "Come on...",
+      "Click Yes instead!",
+      "You sure about that?",
+      "Seriously?",
+      "That's a mistake!"
+    ];
+
     // Ensure arena is a bounding box for the button to move within
     function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
 
+    // Function to get a random funny phrase
+    function getRandomPhrase() {
+      const randomIndex = Math.floor(Math.random() * funnyPhrases.length);
+      return funnyPhrases[randomIndex];
+    }
+
     function moveNoButton() {
+      // Update button text with a random funny phrase
+      noBtn.textContent = getRandomPhrase();
       const a = arena.getBoundingClientRect();
       const b = noBtn.getBoundingClientRect();
 
