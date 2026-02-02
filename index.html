@@ -335,14 +335,6 @@
       background: linear-gradient(135deg, #6b6b6b, #8b8b8b);
       box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
     }
-    #youtube-player{
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
-    }
-
     .modal{
       position:fixed;
       inset:0;
@@ -396,7 +388,6 @@
       h1{ font-size: 24px; }
     }
   </style>
-  <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
   <div class="animation-container" aria-hidden="true" id="animation-container"></div>
@@ -431,10 +422,8 @@
     <div class="music-section">
       <button class="music-btn is-paused" id="play-btn" aria-label="Play background music">▶</button>
     </div>
+    <audio id="bg-audio" preload="auto" aria-hidden="true"></audio>
   </main>
-
-  <!-- Hidden YouTube player -->
-  <div id="youtube-player"></div>
 
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-card">
@@ -450,7 +439,11 @@
     // Change these three constants to customize:
     const WIFE_NAME = "Priya";
     const YES_MESSAGE = "Best decision ever. Dinner + dessert on me ❤️";
-    const YOUTUBE_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"; // Background music URL
+    const MUSIC_FILES = [
+      "music/James Blunt - You're Beautiful (Official Music Video) [4K].mp3",
+      "music/Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster).mp3",
+      "music/Rockstar_ Tum Ho (Lyrical Video) Song _ Ranbir Kapoor _ Nargis _ A R Rahman, Mohit Chauhan.mp3"
+    ];
 
     // apply
     document.getElementById("name").textContent = WIFE_NAME.toLowerCase();
@@ -752,37 +745,9 @@
       confettiTimer = requestAnimationFrame(tick);
     }
 
-    // --- YouTube Audio Player ---
-    let player;
-    let isPlayerReady = false;
-
-    // This function creates the player after the API code downloads.
-    window.onYouTubeIframeAPIReady = function() {
-      isPlayerReady = true;
-      // Auto-play music on page load
-      const videoId = extractVideoId(YOUTUBE_URL);
-      if (videoId) {
-        createPlayer(videoId);
-      }
-    };
-
-    function extractVideoId(url) {
-      // Handle various YouTube URL formats
-      const patterns = [
-        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-        /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
-        /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/
-      ];
-      
-      for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match) return match[1];
-      }
-      return null;
-    }
-
-    const playBtn = document.getElementById('play-btn');
-    let autoPlayAttempted = false;
+    // --- Local Audio Player ---
+    const playBtn = document.getElementById("play-btn");
+    const audio = document.getElementById("bg-audio");
 
     const setButtonState = (isPlaying) => {
       playBtn.textContent = isPlaying ? "⏸" : "▶";
@@ -793,107 +758,46 @@
       playBtn.classList.toggle("is-paused", !isPlaying);
     };
 
-    const ensurePlayerReady = (videoId) => {
-      if (player) return;
-      if (!isPlayerReady) {
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds total
-        const checkReady = setInterval(() => {
-          attempts++;
-          if (isPlayerReady || (window.YT && window.YT.Player)) {
-            clearInterval(checkReady);
-            createPlayer(videoId);
-          } else if (attempts >= maxAttempts) {
-            clearInterval(checkReady);
-          }
-        }, 100);
-      } else {
-        createPlayer(videoId);
+    const pickRandomTrack = () => {
+      if (!MUSIC_FILES.length) return null;
+      const index = Math.floor(Math.random() * MUSIC_FILES.length);
+      return MUSIC_FILES[index];
+    };
+
+    const loadRandomTrack = () => {
+      const track = pickRandomTrack();
+      if (!track) return;
+      audio.src = encodeURI(track);
+    };
+
+    const attemptPlay = () => {
+      if (!audio.src) {
+        loadRandomTrack();
+      }
+      const playPromise = audio.play();
+      if (playPromise) {
+        playPromise
+          .then(() => setButtonState(true))
+          .catch(() => setButtonState(false));
       }
     };
 
     const togglePlayback = () => {
-      const url = YOUTUBE_URL;
-      const videoId = extractVideoId(url);
-      if (!videoId) return;
-
-      if (!player) {
-        ensurePlayerReady(videoId);
-        return;
-      }
-
-      const state = player.getPlayerState();
-      if (state === YT.PlayerState.PLAYING) {
-        player.pauseVideo();
+      if (audio.paused) {
+        attemptPlay();
       } else {
-        player.playVideo();
-        attemptUnmute();
+        audio.pause();
       }
     };
 
-    playBtn.addEventListener('click', togglePlayback);
+    playBtn.addEventListener("click", togglePlayback);
+    window.addEventListener("load", attemptPlay);
 
-    function createPlayer(videoId) {
-      player = new YT.Player('youtube-player', {
-        height: '1',
-        width: '1',
-        videoId: videoId,
-        playerVars: {
-          autoplay: 1,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          modestbranding: 1,
-          playsinline: 1,
-          mute: 1
-        },
-        events: {
-          onReady: (event) => {
-            event.target.mute();
-            event.target.playVideo();
-            setButtonState(true);
-            setTimeout(attemptUnmute, 900);
-            const iframe = event.target.getIframe();
-            if (iframe) {
-              iframe.setAttribute("allow", "autoplay; encrypted-media");
-            }
-          },
-          onStateChange: (event) => {
-            if (event.data === YT.PlayerState.ENDED) {
-              setButtonState(false);
-            } else if (event.data === YT.PlayerState.PLAYING) {
-              setButtonState(true);
-            } else if (event.data === YT.PlayerState.PAUSED) {
-              setButtonState(false);
-            }
-          },
-          onError: () => {
-            setButtonState(false);
-          }
-        }
-      });
-    }
-
-    const attemptUnmute = () => {
-      if (!player || !player.isMuted) return;
-      if (player.isMuted()) {
-        player.unMute();
-        player.setVolume(80);
-      }
-    };
-
-    const attemptAutoPlay = () => {
-      if (autoPlayAttempted) return;
-      autoPlayAttempted = true;
-      const videoId = extractVideoId(YOUTUBE_URL);
-      if (videoId) {
-        ensurePlayerReady(videoId);
-      }
-    };
-
-    window.addEventListener("load", attemptAutoPlay);
-    ["click", "touchstart", "keydown"].forEach((eventName) => {
-      document.addEventListener(eventName, attemptUnmute, { once: true });
+    audio.addEventListener("play", () => setButtonState(true));
+    audio.addEventListener("pause", () => setButtonState(false));
+    audio.addEventListener("ended", () => {
+      loadRandomTrack();
+      attemptPlay();
     });
   </script>
 </body>
