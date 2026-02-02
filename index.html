@@ -385,6 +385,29 @@
       border-radius: 999px;
       font-weight:700;
     }
+    .mobile-modal .modal-card{
+      width:min(480px, 92vw);
+    }
+    .mobile-modal .modal-card p{
+      color:#3a2b34;
+    }
+    .mobile-modal .modal-actions{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      align-items:center;
+    }
+    .mobile-modal .continue{
+      background: linear-gradient(135deg, var(--yes1), var(--yes2));
+      color:#fff;
+      font-weight:700;
+    }
+    .mobile-modal .secondary{
+      background:#f3f3f6;
+      color:#333;
+      font-weight:600;
+      border:1px solid rgba(0,0,0,.08);
+    }
 
     /* confetti */
     canvas#confetti{
@@ -446,6 +469,21 @@
       <h2 id="modalTitle">Yay!!</h2>
       <p id="modalText">Best decision ever. Dinner + dessert on me ❤️</p>
       <button class="btn close" id="closeBtn">Aww okay</button>
+    </div>
+  </div>
+
+  <div class="modal mobile-modal" id="mobileModal" role="dialog" aria-modal="true" aria-labelledby="mobileTitle">
+    <div class="modal-card">
+      <div style="font-size:42px;">💌✨</div>
+      <h2 id="mobileTitle">A tiny love note</h2>
+      <p>
+        This page is extra dreamy on a bigger screen. If you can, open it on desktop for the full sparkle.
+        If you're cozy on mobile, you can still continue right here. 💖
+      </p>
+      <div class="modal-actions">
+        <button class="btn continue" id="continueMobileBtn">Continue on mobile</button>
+        <button class="btn secondary" id="dismissMobileBtn">Maybe later</button>
+      </div>
     </div>
   </div>
 
@@ -656,6 +694,41 @@
     modal.addEventListener("click", (e) => {
       if (e.target === modal) modal.classList.remove("open");
     });
+
+    // --- Mobile gentle notice ---
+    const mobileModal = document.getElementById("mobileModal");
+    const continueMobileBtn = document.getElementById("continueMobileBtn");
+    const dismissMobileBtn = document.getElementById("dismissMobileBtn");
+    const mobileDismissKey = "valentine-mobile-dismissed";
+
+    const isLikelyMobile = () => {
+      if (navigator.userAgentData && typeof navigator.userAgentData.mobile === "boolean") {
+        return navigator.userAgentData.mobile;
+      }
+      const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+      const narrowScreen = window.matchMedia("(max-width: 768px)").matches;
+      const portrait = window.matchMedia("(orientation: portrait)").matches;
+      return coarsePointer && (narrowScreen || portrait);
+    };
+
+    const openMobileModal = () => {
+      if (!mobileModal || !isLikelyMobile()) return;
+      if (sessionStorage.getItem(mobileDismissKey) === "true") return;
+      mobileModal.classList.add("open");
+    };
+
+    const dismissMobileModal = () => {
+      sessionStorage.setItem(mobileDismissKey, "true");
+      mobileModal.classList.remove("open");
+    };
+
+    continueMobileBtn.addEventListener("click", dismissMobileModal);
+    dismissMobileBtn.addEventListener("click", dismissMobileModal);
+    mobileModal.addEventListener("click", (e) => {
+      if (e.target === mobileModal) dismissMobileModal();
+    });
+
+    window.addEventListener("load", openMobileModal);
 
     // Minimal confetti (no libraries)
     const canvas = document.getElementById("confetti");
