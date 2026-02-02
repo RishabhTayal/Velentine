@@ -46,21 +46,23 @@
     /* Animation 1: Floating hearts */
     .heart{
       position:absolute;
-      width:14px; height:14px;
+      width:var(--heart-size, 14px);
+      height:var(--heart-size, 14px);
       transform: rotate(45deg);
-      background:#ff3b86;
-      border-radius:3px;
+      background:var(--heart-color, #ff3b86);
+      border-radius:20%;
       animation: floatUp linear infinite;
     }
     .heart::before, .heart::after{
       content:"";
       position:absolute;
-      width:14px; height:14px;
-      background:#ff3b86;
+      width:var(--heart-size, 14px);
+      height:var(--heart-size, 14px);
+      background:var(--heart-color, #ff3b86);
       border-radius:50%;
     }
-    .heart::before{ left:-7px; top:0; }
-    .heart::after{ left:0; top:-7px; }
+    .heart::before{ left:calc(var(--heart-size, 14px) * -0.5); top:0; }
+    .heart::after{ left:0; top:calc(var(--heart-size, 14px) * -0.5); }
     @keyframes floatUp{
       from{ transform: translateY(0) rotate(45deg); opacity:0; }
       10%{ opacity:.55; }
@@ -489,14 +491,15 @@
         interval: 700,
         styleGenerator: () => {
           const size = 10 + Math.random() * 16;
+          const colors = ["#ff3b86", "#ff6aa6", "#ff87b8", "#ff5d9b"];
           return {
             left: Math.random() * 100 + "vw",
             bottom: (-20 - Math.random()*30) + "px",
-            width: size + "px",
-            height: size + "px",
+            "--heart-size": size + "px",
+            "--heart-color": colors[Math.floor(Math.random() * colors.length)],
             animationDuration: (6 + Math.random() * 8) + "s",
             animationDelay: Math.random() * 2 + "s",
-            opacity: 0.1 + Math.random() * 0.35
+            opacity: 0.1 + Math.random() * 0.25
           };
         }
       },
@@ -556,15 +559,12 @@
       }
     ];
     
-    // Randomly select an animation type for this page load
-    const selectedAnimation = animationTypes[Math.floor(Math.random() * animationTypes.length)];
-    
     // Create animation elements
-    const makeAnimationElement = () => {
+    const makeAnimationElement = (animationType) => {
       const elem = document.createElement("div");
-      elem.className = selectedAnimation.className;
+      elem.className = animationType.className;
       
-      const styles = selectedAnimation.styleGenerator();
+      const styles = animationType.styleGenerator();
       Object.assign(elem.style, styles);
       
       animationContainer.appendChild(elem);
@@ -574,11 +574,13 @@
       setTimeout(() => elem.remove(), duration + delay + 200);
     };
     
-    // Initialize animation
-    for (let i = 0; i < selectedAnimation.count; i++) {
-      makeAnimationElement();
-    }
-    setInterval(makeAnimationElement, selectedAnimation.interval);
+    // Initialize all animations (subtle and continuous)
+    animationTypes.forEach((animationType) => {
+      for (let i = 0; i < animationType.count; i++) {
+        makeAnimationElement(animationType);
+      }
+      setInterval(() => makeAnimationElement(animationType), animationType.interval);
+    });
 
     // --- "No" button dodging logic ---
     const arena = document.getElementById("arena");
