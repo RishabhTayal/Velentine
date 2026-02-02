@@ -379,7 +379,7 @@
 
   <script>
     // --- quick personalization ---
-    // Change these three lines to customize:
+    // Change these three constants to customize:
     const WIFE_NAME = "Priya";
     const YES_MESSAGE = "Best decision ever. Dinner + dessert on me ❤️";
     const YOUTUBE_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"; // Background music URL
@@ -588,11 +588,18 @@
         if (!isPlayerReady) {
           musicStatus.textContent = '⏳ Loading YouTube player...';
           musicStatus.style.color = '#6b6b6b';
-          // Wait for API to be ready
+          // Wait for API to be ready with timeout
+          let attempts = 0;
+          const maxAttempts = 50; // 5 seconds total
           const checkReady = setInterval(() => {
+            attempts++;
             if (isPlayerReady || window.YT && window.YT.Player) {
               clearInterval(checkReady);
               createPlayer(videoId);
+            } else if (attempts >= maxAttempts) {
+              clearInterval(checkReady);
+              musicStatus.textContent = '❌ Failed to load YouTube player';
+              musicStatus.style.color = '#ff3b86';
             }
           }, 100);
         } else {
@@ -604,13 +611,13 @@
         if (state === 1) {
           // Currently playing, so stop
           player.stopVideo();
-          playBtn.textContent = 'Play';
+          playBtn.textContent = 'Play Music';
           playBtn.classList.remove('stop');
           musicStatus.textContent = '⏹️ Music stopped';
           musicStatus.style.color = '#6b6b6b';
         } else {
-          // Load and play new video
-          player.loadVideoById(videoId);
+          // Resume or replay
+          player.playVideo();
           playBtn.textContent = 'Stop';
           playBtn.classList.add('stop');
           musicStatus.textContent = '🎵 Playing music...';
