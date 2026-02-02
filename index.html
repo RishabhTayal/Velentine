@@ -562,6 +562,7 @@
     // --- "No" button dodging logic ---
     const arena = document.getElementById("arena");
     const noBtn = document.getElementById("noBtn");
+    const yesBtn = document.getElementById("yesBtn");
 
     // Array of funny phrases for the "No" button
     const funnyPhrases = [
@@ -596,23 +597,55 @@
       return funnyPhrases[randomIndex];
     }
 
+    function rectsOverlap(a, b) {
+      return !(
+        a.right <= b.left ||
+        a.left >= b.right ||
+        a.bottom <= b.top ||
+        a.top >= b.bottom
+      );
+    }
+
     function moveNoButton() {
       // Update button text with a random funny phrase
       noBtn.textContent = getRandomPhrase();
       const a = arena.getBoundingClientRect();
       const b = noBtn.getBoundingClientRect();
+      const y = yesBtn.getBoundingClientRect();
 
       const padding = 10;
       const maxX = a.width - b.width - padding;
       const maxY = a.height - b.height - padding;
+      const yesRect = {
+        left: y.left - a.left - padding,
+        right: y.right - a.left + padding,
+        top: y.top - a.top - padding,
+        bottom: y.bottom - a.top + padding
+      };
 
-      // pick a new random position
-      let x = Math.random() * maxX + padding;
-      let y = Math.random() * maxY + padding;
+      // pick a new random position (avoid overlapping Yes)
+      let x = 0;
+      let yPos = 0;
+      let attempts = 0;
+      const maxAttempts = 24;
+      do {
+        x = Math.random() * maxX + padding;
+        yPos = Math.random() * maxY + padding;
+        const noRect = {
+          left: x,
+          right: x + b.width,
+          top: yPos,
+          bottom: yPos + b.height
+        };
+        attempts += 1;
+        if (!rectsOverlap(noRect, yesRect)) {
+          break;
+        }
+      } while (attempts < maxAttempts);
 
       // set position relative to arena
       noBtn.style.left = x + "px";
-      noBtn.style.top  = y + "px";
+      noBtn.style.top  = yPos + "px";
       noBtn.style.transform = "translateX(0)"; // we switch from %-based centering to px positioning
     }
 
@@ -640,7 +673,6 @@
     noBtn.addEventListener("click", (e) => { e.preventDefault(); moveNoButton(); });
 
     // --- Yes modal + confetti ---
-    const yesBtn = document.getElementById("yesBtn");
     const modal = document.getElementById("modal");
     const closeBtn = document.getElementById("closeBtn");
 
