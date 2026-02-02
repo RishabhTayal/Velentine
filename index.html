@@ -790,8 +790,23 @@
       }
     };
 
+    const startAutoplay = () => {
+      audio.muted = true;
+      attemptPlay();
+    };
+
+    const enableAudioOnInteraction = () => {
+      audio.muted = false;
+      if (audio.paused) {
+        attemptPlay();
+      }
+    };
+
     playBtn.addEventListener("click", togglePlayback);
-    window.addEventListener("load", attemptPlay);
+    window.addEventListener("load", startAutoplay);
+    ["pointerdown", "touchstart", "keydown"].forEach((eventName) => {
+      window.addEventListener(eventName, enableAudioOnInteraction, { once: true });
+    });
 
     audio.addEventListener("play", () => setButtonState(true));
     audio.addEventListener("pause", () => setButtonState(false));
