@@ -217,6 +217,80 @@
       color: var(--muted);
     }
 
+    /* Music player styles */
+    .music-section{
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .music-label{
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+      text-align: center;
+    }
+    .music-controls{
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .music-input{
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      background: white;
+      outline: none;
+      transition: border .2s ease;
+    }
+    .music-input:focus{
+      border-color: var(--yes1);
+    }
+    .music-input::placeholder{
+      color: #999;
+    }
+    .music-btn{
+      padding: 10px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s ease;
+      background: linear-gradient(135deg, var(--yes1), var(--yes2));
+      color: white;
+      box-shadow: 0 4px 12px rgba(255, 59, 134, .25);
+    }
+    .music-btn:hover{
+      filter: brightness(1.05);
+      transform: scale(1.02);
+    }
+    .music-btn:active{
+      transform: scale(.98);
+    }
+    .music-btn.stop{
+      background: linear-gradient(135deg, #6b6b6b, #8b8b8b);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+    }
+    .music-status{
+      margin-top: 8px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 18px;
+    }
+    #youtube-player{
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
     .modal{
       position:fixed;
       inset:0;
@@ -268,6 +342,7 @@
       h1{ font-size: 24px; }
     }
   </style>
+  <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
   <div class="hearts" aria-hidden="true" id="hearts"></div>
@@ -297,7 +372,26 @@
     </section>
 
     <div class="hint" id="hint">“No” seems a bit shy 😈</div>
+
+    <!-- Music player section -->
+    <div class="music-section">
+      <div class="music-label">🎵 Background Music</div>
+      <div class="music-controls">
+        <input 
+          type="text" 
+          id="youtube-url" 
+          class="music-input" 
+          placeholder="Paste YouTube link here..."
+          aria-label="YouTube URL"
+        />
+        <button class="music-btn" id="play-btn" aria-label="Play music">Play</button>
+      </div>
+      <div class="music-status" id="music-status"></div>
+    </div>
   </main>
+
+  <!-- Hidden YouTube player -->
+  <div id="youtube-player"></div>
 
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-card">
@@ -467,6 +561,136 @@
         }
       };
       confettiTimer = requestAnimationFrame(tick);
+    }
+
+    // --- YouTube Audio Player ---
+    let player;
+    let isPlayerReady = false;
+
+    // This function creates the player after the API code downloads.
+    window.onYouTubeIframeAPIReady = function() {
+      isPlayerReady = true;
+    };
+
+    function extractVideoId(url) {
+      // Handle various YouTube URL formats
+      const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+        /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+        /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/
+      ];
+      
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) return match[1];
+      }
+      return null;
+    }
+
+    const playBtn = document.getElementById('play-btn');
+    const youtubeUrlInput = document.getElementById('youtube-url');
+    const musicStatus = document.getElementById('music-status');
+
+    playBtn.addEventListener('click', () => {
+      const url = youtubeUrlInput.value.trim();
+      
+      if (!url) {
+        musicStatus.textContent = '⚠️ Please enter a YouTube URL';
+        musicStatus.style.color = '#ff3b86';
+        return;
+      }
+
+      const videoId = extractVideoId(url);
+      
+      if (!videoId) {
+        musicStatus.textContent = '⚠️ Invalid YouTube URL';
+        musicStatus.style.color = '#ff3b86';
+        return;
+      }
+
+      if (!player) {
+        // Create player for the first time
+        if (!isPlayerReady) {
+          musicStatus.textContent = '⏳ Loading YouTube player...';
+          musicStatus.style.color = '#6b6b6b';
+          // Wait for API to be ready
+          const checkReady = setInterval(() => {
+            if (isPlayerReady || window.YT && window.YT.Player) {
+              clearInterval(checkReady);
+              createPlayer(videoId);
+            }
+          }, 100);
+        } else {
+          createPlayer(videoId);
+        }
+      } else {
+        // Player exists, check if playing or stopped
+        const state = player.getPlayerState();
+        if (state === 1) {
+          // Currently playing, so stop
+          player.stopVideo();
+          playBtn.textContent = 'Play';
+          playBtn.classList.remove('stop');
+          musicStatus.textContent = '⏹️ Music stopped';
+          musicStatus.style.color = '#6b6b6b';
+        } else {
+          // Load and play new video
+          player.loadVideoById(videoId);
+          playBtn.textContent = 'Stop';
+          playBtn.classList.add('stop');
+          musicStatus.textContent = '🎵 Playing music...';
+          musicStatus.style.color = '#ff3b86';
+        }
+      }
+    });
+
+    function createPlayer(videoId) {
+      player = new YT.Player('youtube-player', {
+        height: '1',
+        width: '1',
+        videoId: videoId,
+        playerVars: {
+          autoplay: 1,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          modestbranding: 1,
+          playsinline: 1
+        },
+        events: {
+          onReady: (event) => {
+            event.target.playVideo();
+            playBtn.textContent = 'Stop';
+            playBtn.classList.add('stop');
+            musicStatus.textContent = '🎵 Playing music...';
+            musicStatus.style.color = '#ff3b86';
+          },
+          onStateChange: (event) => {
+            if (event.data === YT.PlayerState.ENDED) {
+              playBtn.textContent = 'Play';
+              playBtn.classList.remove('stop');
+              musicStatus.textContent = '✓ Music ended';
+              musicStatus.style.color = '#6b6b6b';
+            } else if (event.data === YT.PlayerState.PLAYING) {
+              playBtn.textContent = 'Stop';
+              playBtn.classList.add('stop');
+              musicStatus.textContent = '🎵 Playing music...';
+              musicStatus.style.color = '#ff3b86';
+            } else if (event.data === YT.PlayerState.PAUSED) {
+              playBtn.textContent = 'Play';
+              playBtn.classList.remove('stop');
+              musicStatus.textContent = '⏸️ Music paused';
+              musicStatus.style.color = '#6b6b6b';
+            }
+          },
+          onError: (event) => {
+            musicStatus.textContent = '❌ Error loading video';
+            musicStatus.style.color = '#ff3b86';
+            playBtn.textContent = 'Play';
+            playBtn.classList.remove('stop');
+          }
+        }
+      });
     }
   </script>
 </body>
