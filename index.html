@@ -302,6 +302,43 @@
       color: var(--muted);
     }
 
+    .special-day{
+      margin-top: 14px;
+      border: 1px solid rgba(255, 59, 134, .2);
+      background: linear-gradient(135deg, rgba(255,255,255,.85), rgba(255, 223, 236, .9));
+      border-radius: 16px;
+      padding: 14px 12px;
+      text-align: center;
+      box-shadow: 0 8px 16px rgba(255, 59, 134, .12);
+    }
+    .special-day h2{
+      margin: 0 0 6px;
+      font-size: 18px;
+      color: #cc1861;
+    }
+    .special-day p{
+      margin: 0;
+      font-size: 14px;
+      color: #5a3850;
+    }
+    .special-btn{
+      margin-top: 10px;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #ff3b86, #f37cab);
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(255, 59, 134, .24);
+      animation: pulseLove 1.9s ease-in-out infinite;
+    }
+    @keyframes pulseLove{
+      0%, 100%{ transform: scale(1); }
+      50%{ transform: scale(1.05); }
+    }
+
     /* Music player styles */
     .music-section{
       position: fixed;
@@ -418,6 +455,12 @@
 
     <div class="hint" id="hint">“No” seems a bit shy 😈</div>
 
+    <section class="special-day" id="specialDay" aria-live="polite" hidden>
+      <h2>💝 Valentine's Day Special</h2>
+      <p id="specialMessage"></p>
+      <button class="special-btn" id="specialBtn">Open today’s surprise</button>
+    </section>
+
     <!-- Music control -->
     <div class="music-section">
       <button class="music-btn is-paused" id="play-btn" aria-label="Play background music">▶</button>
@@ -439,6 +482,13 @@
     // Change these three constants to customize:
     const WIFE_NAME = "Priya";
     const YES_MESSAGE = "Best decision ever. Dinner + dessert on me ❤️";
+    const VALENTINE_SURPRISES = [
+      "🌹 Love Coupon #1: You pick tonight’s movie, no vetoes.",
+      "🍫 Love Coupon #2: Dessert date this weekend is officially locked.",
+      "📝 Love Note: You make every ordinary day feel magical.",
+      "🎵 Playlist Promise: Your favorite songs are on repeat tonight.",
+      "📸 Memory Mission: Let’s recreate one of our favorite photos."
+    ];
     const MUSIC_FILES = [
       "music/James Blunt - You're Beautiful (Official Music Video) [4K].mp3",
       "music/Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster).mp3",
@@ -448,6 +498,28 @@
     // apply
     document.getElementById("name").textContent = WIFE_NAME;
     document.getElementById("modalText").textContent = YES_MESSAGE;
+
+    const isValentinesDay = (date = new Date()) => date.getMonth() === 1 && date.getDate() === 14;
+
+    const setSpecialDaySection = () => {
+      if (!isValentinesDay()) return;
+
+      const specialDay = document.getElementById("specialDay");
+      const specialMessage = document.getElementById("specialMessage");
+      const specialBtn = document.getElementById("specialBtn");
+      const hint = document.getElementById("hint");
+
+      specialDay.hidden = false;
+      hint.textContent = "Today is Valentine's Day — extra romance mode unlocked 💖";
+      specialMessage.textContent = "A little surprise is waiting below. Tap to unwrap today's love coupon.";
+
+      specialBtn.addEventListener("click", () => {
+        const randomIndex = Math.floor(Math.random() * VALENTINE_SURPRISES.length);
+        specialMessage.textContent = VALENTINE_SURPRISES[randomIndex];
+      });
+    };
+
+    setSpecialDaySection();
 
     // --- randomized romantic background animations ---
     const animationContainer = document.getElementById("animation-container");
